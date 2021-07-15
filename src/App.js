@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import SignIn from "./components/getData/SignIn";
+import "./App.css";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import routes from "./routes";
 // import {cache} from 'cache'
@@ -11,88 +10,44 @@ import {
   HttpLink,
   from,
 } from "@apollo/client";
-import { onError } from "@apollo/client/link/error";
+import Login from "./login/Login";
+import HomePage from "./homepage/HomePage";
 
-const errorLink = onError(({ graphqlErrors, networkError }) => {
-  if (graphqlErrors) {
-    graphqlErrors.map(({ message, location, path }) => {
-      alert(`Graph Error ${message}`);
-    });
-  }
-});
-
-const link = from([
-  errorLink,
-  new HttpLink({ uri: "https://api.omcustom.com/query" }),
-]);
-const defaultOptions = {
-  watchQuery: {
-    fetchPolicy: "cache-and-network",
-    errorPolicy: "ignore",
-  },
-  query: {
-    fetchPolicy: "network-only",
-    errorPolicy: "all",
-  },
-  mutate: {
-    errorPolicy: "all",
-  },
-};
-const client = new ApolloClient({
-  link: new HttpLink("https://api.omcustom.com/query"),
-  cache: new InMemoryCache(),
-  defaultOptions,
-});
-
-const App = () => {
-  const [testdata, setTestData] = useState([]);
-
-  // const fetchData = () => {
-  //   const apiUrl = "https://api.omcustom.com/createUsers";
-  //   fetch(apiUrl)
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       setTestData(data);
-  //       console.log("fetch data", data);
-  //     });
-  // };
-  // useEffect(() => {
-  //   fetchData();
-  // }, []);
-
-  console.log(testdata);
+function App() {
+  const defaultOptions = {
+    watchQuery: {
+      fetchPolicy: "cache-and-network",
+      errorPolicy: "ignore",
+    },
+    query: {
+      fetchPolicy: "network-only",
+      errorPolicy: "all",
+    },
+    mutate: {
+      errorPolicy: "all",
+    },
+  };
+  const client = new ApolloClient({
+    //   link: new HttpLink("https://api.omcustom.com/query"),
+    //   cache: new InMemoryCache(),
+    //   defaultOptions,
+    cache: new InMemoryCache(),
+    uri: "https://api.omcustom.com/query",
+    headers: {
+      authorization: localStorage.getItem("token") || "",
+    },
+    defaultOptions,
+  });
   return (
-    <ApolloClient client={client}>
-      <SignIn />
-    </ApolloClient>
-  );
-};
-{
-  /*
-  <Router>
-        <ApolloClient client={client}>
-          <Switch>
-            {routes.map(({ component, path, exact }, index) => (
-              <Route key={index} path={path} exact={exact}>
-                {component}
-              </Route>
-            ))}
-          </Switch>
-        </ApolloClient>
+    <ApolloProvider client={client}>
+      <Router>
+        <Switch>
+          <Route component={Login} path="/user/login" />
+          <Route component={HomePage} path="/" />
+        </Switch>
       </Router>
-*/
+    </ApolloProvider>
+  );
 }
-// <ApolloClient client={client}>
-//   <GetUser />
-// </ApolloClient>
-// <div>
 
-//   <Form />
-{
-  /* user {testdata}
-      <h4>get user</h4> */
-}
-// </div>
-
-// const AppGetData = graphql(queryUser)(App);
 export default App;
