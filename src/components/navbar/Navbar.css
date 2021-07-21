@@ -96,7 +96,7 @@
 .navLinksDropdown:hover {
   /* border-left: 3px solid rgb(162, 0, 255); */
   transition: all 0.2s ease-out;
-  color: #fff;
+  color: rgb(21, 1, 32);
   transition: ease-in;
 }
 
