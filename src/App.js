@@ -1,17 +1,20 @@
 import "./App.css";
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import routes from "./routes";
-// import {cache} from 'cache'
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  BrowserRouter,
+} from "react-router-dom";
+
+import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
 
 import {
-  ApolloClient,
-  InMemoryCache,
-  ApolloProvider,
-  HttpLink,
-  from,
-} from "@apollo/client";
-import Login from "./login/Login";
-import HomePage from "./homepage/HomePage";
+  Login,
+  HomePage,
+  Navbar,
+  HandleTags,
+  UsersList,
+} from "./components/index";
 
 function App() {
   const defaultOptions = {
@@ -33,19 +36,24 @@ function App() {
     //   defaultOptions,
     cache: new InMemoryCache(),
     uri: "https://api.omcustom.com/query",
-    headers: {
-      authorization: localStorage.getItem("token") || "",
-    },
+    // headers: {
+    //   authorization: localStorage.getItem("token") || "",
+    // },
     defaultOptions,
   });
   return (
     <ApolloProvider client={client}>
-      <Router>
-        <Switch>
-          <Route component={Login} path="/user/login" />
-          <Route component={HomePage} path="/" />
-        </Switch>
-      </Router>
+      <BrowserRouter>
+        <Router>
+          <Navbar />
+          <Switch>
+            <Route component={Login} path="/user/login" />
+            <Route component={UsersList} path="/user/getuser" />
+            <Route component={HandleTags} path="product/tags" />
+            <Route component={HomePage} path="/" />
+          </Switch>
+        </Router>
+      </BrowserRouter>
     </ApolloProvider>
   );
 }

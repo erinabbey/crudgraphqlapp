@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useMutation } from "@apollo/client";
 import { gql } from "@apollo/client";
 import "./Login.css";
-import { useHistory } from "react-router-dom";
+import { useHistory } from "react-router";
+import { saveTokens, saveUsername } from "../../auth/AuthToken";
 import validateInput from "./handleform/validateInput";
-import HandleForm from "./handleform/HandleForm";
+
+const TOKEN_NAME = "token";
+const USER_NAME = "username";
 
 const Login = () => {
   const [errors, setErrors] = useState({
@@ -16,10 +19,7 @@ const Login = () => {
     email: "",
     password: "",
   });
-  const [token, setToken] = useState("");
-  // const [error, setError] = useState("");
   const history = useHistory();
-
   // // mutate function
   const LOGIN_USER = gql`
     mutation login($email: String!, $password: String!) {
@@ -29,63 +29,46 @@ const Login = () => {
     }
   `;
 
-  // execute mutate function
-  const [login, { loading }] = useMutation(LOGIN_USER, {
-    update(proxy, result) {
-      console.log("result", result.data.login.token);
-      setToken(result.data.login.token);
-      console.log("error", result.errors[0].message);
-      setErrors((prevState) => {
-        return {
-          ...prevState,
-          graphQLErrors: result.errors[0].message,
-        };
-      });
-    },
-    onCompleted({ login }) {
-      if (login) {
-        localStorage.setItem("token", login.token.toString());
-        console.log("token", localStorage.getItem("token"));
-        // setToken(localStorage.getItem("token"));
-        // console.log("token", token);
-      }
-    },
-    variables: dataSignIn,
-    onError(err) {
-      console.log("graphQLErrors", err.graphQLErrors);
-    },
-  });
+  const [login, { loading }] = useMutation(LOGIN_USER);
+  async function submitLogin(e) {
+    e.preventDefault();
+    const validate = validateInput(dataSignIn);
+    console.log(validate);
+    const { data } = await login({ variables: dataSignIn });
+    console.log(data.login.token);
+    if (data && data.login) {
+      saveTokens(data.login.token);
+      saveUsername(dataSignIn.email);
+      history.push("/");
+    }
+  }
 
   // when user click submit
   const handleSignIn = (e) => {
     e.preventDefault();
-    //validate inputs empty or invalid
     const validate = validateInput(dataSignIn);
     console.log(validate);
 
-    setErrors(validate);
-    console.log(errors);
-    login();
-    let result = Object.values(errors).every((o) => o === "");
-    console.log(result);
-    console.log("token", token);
-    if (result) {
-      // history.push("/");
-      console.log("com");
+    // localStorage.removeItem(TOKEN_NAME);
+    // login();
+    let token = localStorage.getItem(TOKEN_NAME);
+    if (token) {
+      history.push("/");
+      console.log("cc");
     }
   };
 
   // // handle when change value in input fields
   const handleChange = (e) => {
-    // const { name, value } = e.target.value;
     setDataSignIn({
       ...dataSignIn,
       [e.target.name]: e.target.value,
     });
   };
+
   return (
     <div className="formContent">
-      <form className="form" onSubmit={handleSignIn}>
+      <form className="form" onSubmit={submitLogin}>
         <div className="formInputs">
           <label htmlFor="email" className="formLabel">
             Email
@@ -116,7 +99,7 @@ const Login = () => {
           />
           {errors.passwordError && <p>{errors.passwordError}</p>}
         </div>
-        <button className="formInputBtn" type="submit" onClick={handleSignIn}>
+        <button className="formInputBtn" type="submit" onClick={submitLogin}>
           Sign in
         </button>
       </form>
