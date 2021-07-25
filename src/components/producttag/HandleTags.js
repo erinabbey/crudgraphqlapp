@@ -27,10 +27,11 @@ const client = new ApolloClient({
 });
 
 const ADD_TAG = gql`
-  mutation updateTag($input: EditTag!) {
-    updateTag(input: $input) {
+  mutation createTag($input: NewTag!) {
+    createTag(input: $input) {
       id
       title
+      description
     }
   }
 `;
@@ -51,8 +52,8 @@ const DELETE_TAG = gql`
   }
 `;
 const UPDATE_TAG = gql`
-  mutation updateTag($id: ID!, $title: String, $description: String) {
-    updateTag(input: { id: $id, title: $title, description: $description }) {
+  mutation updateTag($input: EditTag!) {
+    updateTag(input: $input) {
       id
       title
       description
@@ -68,14 +69,16 @@ const HandleTags = () => {
   });
   const [showEditTagForm, setShowEditTagForm] = useState(false);
   const [getTags, setGetTags] = useState([]);
-  const [inputVisible, setInputVisible] = useState(false);
   const [inputValue, setInputValue] = useState({
     title: "",
     description: "",
   });
   const [showModal, setShowModal] = useState(false);
-  const [isTagVisible, setIsTagVisible] = useState("true");
-
+  const [editInputValue, setEditInputValue] = useState({
+    id: "",
+    title: "",
+    description: "",
+  });
   const handleCreateTag = () => {
     client
       .mutate({
@@ -87,7 +90,6 @@ const HandleTags = () => {
       .then((result) => console.log(result))
       .catch((error) => console.log(error));
   };
-
   const handleGetTags = () => {
     client
       .query({
@@ -104,12 +106,13 @@ const HandleTags = () => {
         });
       });
   };
-
   const handleEditTag = () => {
     client
       .mutate({
         mutation: UPDATE_TAG,
-        variables: {},
+        variables: {
+          input: editInputValue,
+        },
       })
       .then((result) => console.log(result))
       .catch((error) => console.log(error));
@@ -125,19 +128,6 @@ const HandleTags = () => {
       .then((result) => console.log("result of delete", result))
       .catch((error) => console.log(error));
   };
-  const handleShowInput = () => {
-    setInputValue({ inputVisible: true }, () => {
-      Input.focus();
-    });
-  };
-  const handleInputChange = (e) => {
-    setInputValue({ input: e.target.value });
-  };
-  const handelComfirmInput = () => {};
-
-  const handleShowModal = () => {
-    setShowModal(true);
-  };
   const handleCancelModal = () => {
     setShowModal(false);
   };
@@ -151,7 +141,7 @@ const HandleTags = () => {
       [name]: value,
     });
   };
-  console.log("du di me", inputValue);
+
   const showFormAddTag = (
     <Form
       name="basic"
@@ -197,59 +187,52 @@ const HandleTags = () => {
   const showTag = () => {
     handleGetTags();
     console.log("getag", getTags);
-    // return getTags.map((tag) => {
-    //   <Tag closable onClose={(e) => e.preventDefault()}>
-    //     {tag.id}
-    //   </Tag>;
-    // });
   };
   const deleteTag = (tagID) => {
     handleDeleteTag(tagID);
   };
 
-  console.log(isTagVisible);
-  const handleSort = (value) => {
-    console.log(value);
+  const handleEditInputValueChange = (e) => {
+    console.log(editInputValue);
+    setEditInputValue({
+      ...editInputValue,
+      [e.target.name]: e.target.value,
+    });
   };
-  const editTagForm = (
-    <Form
-      name="basic"
-      labelCol={{ span: 8 }}
-      wrapperCol={{ span: 16 }}
-      initialValues={{ remember: true }}
-    >
+  const handleOkModalEditTag = () => {
+    handleEditTag();
+    console.log(editInputValue);
+  };
+  const setShowEditTagFormForm = (
+    <Form name="basic" labelCol={{ span: 8 }} wrapperCol={{ span: 16 }}>
+      <Form.Item label="ID" name="id">
+        <Input
+          disabled
+          name="id"
+          placeholder={editInputValue.id}
+          value={editInputValue.id}
+          onChange={handleEditInputValueChange}
+        />
+      </Form.Item>
       <Form.Item
         label="Title"
-        name="tt"
-        rules={[{ required: true, message: "Input title of tag" }]}
+        name="title"
+        rules={[{ required: true, message: "Title is required" }]}
       >
         <Input
           name="title"
-          value={inputValue.title}
-          onChange={handleChangeInputValue}
+          placeholder={editInputValue.title}
+          value={editInputValue.title}
+          onChange={handleEditInputValueChange}
         />
       </Form.Item>
-
-      <Form.Item
-        label="Description"
-        name="desc"
-        rules={[{ required: false, message: "Input description of tag" }]}
-      >
+      <Form.Item label="Description" name="description">
         <Input
           name="description"
-          value={inputValue.description}
-          onChange={handleChangeInputValue}
+          placeholder={editInputValue.description}
+          value={editInputValue.description}
+          onChange={handleEditInputValueChange}
         />
-      </Form.Item>
-
-      <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-        <Button
-          type="primary"
-          htmlType="submit"
-          onClick={() => message.info("Saved!")}
-        >
-          Save
-        </Button>
       </Form.Item>
     </Form>
   );
@@ -265,13 +248,31 @@ const HandleTags = () => {
               key={tag.id}
               closable
               onClose={() => deleteTag(tag.id)}
-              onClick={() => setShowEditTagForm(true)}
+              onClick={() => {
+                setShowEditTagForm(true);
+                setEditInputValue({
+                  ...editInputValue,
+                  id: tag.id,
+                  title: tag.title,
+                  description: tag.description,
+                });
+                // setEditInputValue(tag);
+                console.log(tag.id, tag.description, tag.title);
+                console.log(editInputValue);
+              }}
             >
               {tag.title}
             </Tag>
           </Tooltip>
         ))}
-        <Modal visible={showEditTagForm}>{editTagForm}</Modal>
+        <Modal
+          title="Edit tag"
+          visible={showEditTagForm}
+          onOk={() => handleOkModalEditTag()}
+          onCancel={() => setShowEditTagForm(false)}
+        >
+          {setShowEditTagFormForm}
+        </Modal>
         <Button onClick={() => setShowModal(true)} type="primary">
           Add Tag
         </Button>
